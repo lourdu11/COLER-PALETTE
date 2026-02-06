@@ -1,0 +1,5 @@
+npm i express cors mongoose
+npm i nodemon -D
+
+npm create vite@latest .
+npm i lucide-react axios react-hot-toast @tailwindcss/vite tailwindcss
