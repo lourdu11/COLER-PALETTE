@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import toast, { Toaster } from "react-hot-toast";
 import axios from "axios";
 
-const  API_URL = "http://localhost:5000/api/palettes";
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000/api/palettes";
 const App = () => {
   const [palette, setPalette] = useState([]);
   const [savedPalettes, setSavedPalettes] = useState([]);
@@ -24,44 +24,44 @@ const App = () => {
   const generateNew = () => {
     const baseHue = Math.floor(Math.random() * 360);
     const baseSaturation = 40 + Math.random() * 40;
-    const currentPalette = palette.length >0 ? palette : Array.from({ length: 5 }, ()=>({hex:"" , locked:false}));
-    const newPalette = currentPalette.map((c,i)=>{
-      if(c.locked) return c;
+    const currentPalette = palette.length > 0 ? palette : Array.from({ length: 5 }, () => ({ hex: "", locked: false }));
+    const newPalette = currentPalette.map((c, i) => {
+      if (c.locked) return c;
       const h = (baseHue + i * 10) % 360;
-      const l = 20 + i *16;
+      const l = 20 + i * 16;
       return { ...c, hex: hslToHex(h, baseSaturation, l) };
     });
-setPalette(newPalette);
+    setPalette(newPalette);
 
   };
 
   useEffect(() => {
     generateNew();
-    axios.get(API_URL).then((res)=>{
+    axios.get(API_URL).then((res) => {
       setSavedPalettes(res.data);
     });
   }, []);
 
-const toggleLock = (index) => {
-  const newPalette = [...palette];
-  newPalette[index].locked = !newPalette[index].locked;
-  setPalette(newPalette);
-};
+  const toggleLock = (index) => {
+    const newPalette = [...palette];
+    newPalette[index].locked = !newPalette[index].locked;
+    setPalette(newPalette);
+  };
 
-const copyToClipboard = (color) => {
-  navigator.clipboard.writeText(color);
-  toast.success(`Copied ${color} to clipboard!`, { style: { borderRadius: '10px', background: '#333', color: '#fff' } });
-};
+  const copyToClipboard = (color) => {
+    navigator.clipboard.writeText(color);
+    toast.success(`Copied ${color} to clipboard!`, { style: { borderRadius: '10px', background: '#333', color: '#fff' } });
+  };
   const savePalette = async () => {
     const title = prompt("Enter a title for your palette:");
     if (!title) return;
-    try{
-      const colors=palette.map(c=>c.hex);
-      const res=await axios.post(API_URL, { title, colors });
-      setSavedPalettes([ res.data, ...savedPalettes]);
+    try {
+      const colors = palette.map(c => c.hex);
+      const res = await axios.post(API_URL, { title, colors });
+      setSavedPalettes([res.data, ...savedPalettes]);
       toast.success("saved to collections!");
-    }catch (error) {
-        toast.error("Failed to save ");
+    } catch (error) {
+      toast.error("Failed to save ");
     }
   };
 
@@ -69,7 +69,7 @@ const copyToClipboard = (color) => {
     try {
       await axios.delete(`${API_URL}/${id}`);
       setSavedPalettes(savedPalettes.filter((p) => p._id !== id));
-      toast.success("Palette deleted!",{icon: '🗑️'});
+      toast.success("Palette deleted!", { icon: '🗑️' });
     } catch (error) {
       toast.error("Failed to delete palette.");
     }
@@ -77,7 +77,7 @@ const copyToClipboard = (color) => {
 
   return (
     <div className="min-h-screen bg-slate-50 p-4 md:p-8 font-sans text-slate-900">
-      <Toaster position="top-center"/>
+      <Toaster position="top-center" />
       <div className="max-w-6xl mx-auto">
         <header className="flex flex-col md:flex-row justify-between items-center mb-10 gap-4">
           <div>
@@ -115,15 +115,15 @@ const copyToClipboard = (color) => {
               style={{ backgroundColor: color.hex }}
             >
               <div className="flex flex-col gap-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                <button onClick={()=>toggleLock(i)}
+                <button onClick={() => toggleLock(i)}
                   className="p-3 bg-white/20 backdrop-blur-lg rounded-full hover:bg-white/40
                 text-white border border-white/30 shadow-xl"
                 >
-                 {color.locked ? <Lock size={22} /> :  <Unlock size={22} />}
+                  {color.locked ? <Lock size={22} /> : <Unlock size={22} />}
                 </button>
                 <button
                   className="p-3 bg-white/20 backdrop-blur-lg rounded-full hover:bg-white/40
-                text-white border border-white/30 shadow-xl" onClick={()=>copyToClipboard(color.hex)}
+                text-white border border-white/30 shadow-xl" onClick={() => copyToClipboard(color.hex)}
                 >
                   <Copy size={22} />
                 </button>
@@ -144,34 +144,34 @@ const copyToClipboard = (color) => {
 
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 cursor-pointer">
-            {savedPalettes.map((p)=>(
-              <div key={p._id}
-               className="bg-white p-5 rounded-md shadow-sm border
+          {savedPalettes.map((p) => (
+            <div key={p._id}
+              className="bg-white p-5 rounded-md shadow-sm border
               border-slate-100 transition-all hover:shadow-xl hover:translate-y-1">
-                <div className="flex justify-between items-center mb-4 px-1">
-                  <span className="font-semibold text-slate-700">{p.title}</span>
-                  <button onClick={()=>deletePalette(p._id)}
-                    className="text-slate-300 hover:text-red-500 transition-colors p-1">
-                    <Trash2 size={18} /></button>
-                </div>
-                <div className="flex h-16 rounded-md overflow-hidden shadow-inner border border-slate-50">
-                  {p.colors.map((c, idx)=>(
-                    <div key={idx} className="flex-1 group/color relative flex justify-center items-center
-                    transition-transform hover:scale-110 cursor-pointer"
-                     style={{ backgroundColor: c}} onClick={()=>copyToClipboard(c)}
-                     title={`copy ${c}`}
-                     >
-                      <div  className="opacity-0 group-hover/color:opacity-100 transition-opacity duration-200
-                      pointer-events-none" title={c}>
-                        <Copy size={18} className="text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.5)]"/>
-
-                      </div>
-
-                     </div>
-                  ))}
-                </div>
+              <div className="flex justify-between items-center mb-4 px-1">
+                <span className="font-semibold text-slate-700">{p.title}</span>
+                <button onClick={() => deletePalette(p._id)}
+                  className="text-slate-300 hover:text-red-500 transition-colors p-1">
+                  <Trash2 size={18} /></button>
               </div>
-            ))}
+              <div className="flex h-16 rounded-md overflow-hidden shadow-inner border border-slate-50">
+                {p.colors.map((c, idx) => (
+                  <div key={idx} className="flex-1 group/color relative flex justify-center items-center
+                    transition-transform hover:scale-110 cursor-pointer"
+                    style={{ backgroundColor: c }} onClick={() => copyToClipboard(c)}
+                    title={`copy ${c}`}
+                  >
+                    <div className="opacity-0 group-hover/color:opacity-100 transition-opacity duration-200
+                      pointer-events-none" title={c}>
+                      <Copy size={18} className="text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.5)]" />
+
+                    </div>
+
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))}
         </div>
       </div>
     </div>
